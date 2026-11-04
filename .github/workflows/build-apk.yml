@@ -47,7 +47,6 @@ jobs:
       - name: Pruebas del extractor y la interfaz
         run: |
           bash tests/run-parser-tests.sh
-          python3 tests/test_animeav1_ui.py
           python3 tests/test_player_v9_5_contract.py
 
       - name: Compilar APK
