@@ -1,0 +1,64 @@
+name: Compilar APK Toki Fenix v9.5
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Extraer proyecto Android
+        run: |
+          unzip -oq Toki-Fenix-TV-v9.5-subir-a-GitHub.zip
+          test -f app/build.gradle
+          test -f settings.gradle
+
+      - name: Instalar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Android 35
+        run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.12'
+
+      - name: Comprobar JavaScript
+        run: node --check app/src/main/assets/tv.js
+
+      - name: Pruebas del extractor y la interfaz
+        run: |
+          bash tests/run-parser-tests.sh
+          python3 tests/test_animeav1_ui.py
+          python3 tests/test_player_v9_5_contract.py
+
+      - name: Compilar APK
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+
+      - name: Verificar archivo generado
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Toki-Lite-Fenix-TV-v9_5-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
