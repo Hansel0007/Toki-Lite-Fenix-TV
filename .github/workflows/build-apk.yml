@@ -50,8 +50,11 @@ jobs:
           python3 tests/test_player_v9_5_contract.py
 
       - name: Compilar APK
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
-
+        run: |
+          sdkmanager --install 'platforms;android-36'
+          sed -i 's/compileSdk 35/compileSdk 36/' app/build.gradle
+          sed -i "s/version '8.9.2'/version '8.10.1'/" build.gradle
+          gradle --no-daemon --stacktrace :app:assembleDebug
       - name: Verificar archivo generado
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
